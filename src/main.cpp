@@ -10,8 +10,8 @@ int main()
 	int xSize, ySize ;
 	xSize = ySize = 50;
 	int elementSize = 20;
-	float diff = 0.207;
-	float visc = 0.9975;
+	float diff = 0.107;
+	float visc = 0.19975;
 	float dens_value = 100;
 	//simulation parameters
 	int framerate = 60;

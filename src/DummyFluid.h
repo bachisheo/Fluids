@@ -39,5 +39,5 @@ private:
 	vector<vector<float>> u_prev;
 	vector<vector<float>> v_prev;
 };
-void Gauss(const vector<vector<float>>& x, const vector<vector<float>> & x0, float koef = 1);
+void Gauss(const vector<vector<float>>& x, const vector<vector<float>> & x0);
 
