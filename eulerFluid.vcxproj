@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\DummyFluid.h" />
+    <ClInclude Include="src\FluidLogic.h" />
     <ClInclude Include="src\Field.h" />
     <ClInclude Include="src\Fluid.h" />
     <ClInclude Include="src\SFML\Audio.hpp" />
@@ -32,6 +34,7 @@
     <ClInclude Include="src\SFML\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\DummyFluid.cpp" />
     <ClCompile Include="src\Field.cpp" />
     <ClCompile Include="src\Fluid.cpp" />
     <ClCompile Include="src\main.cpp" />

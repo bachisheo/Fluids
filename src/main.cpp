@@ -1,13 +1,12 @@
 #include "Fluid.h"
 #include <SFML/Graphics.hpp>
 
-
 int main()
 {
 	//fluid parameters
-	int xSize = 100;
-	int ySize = 100;
-	int elementSize = 10;
+	int xSize = 200;
+	int ySize = 200;
+	int elementSize = 4;
 	float diff = 0.07;
 	float visc = 0.9975;
 
@@ -23,17 +22,17 @@ int main()
 	int lastMouseY = 0;
 
 	//setting up render window
-	sf::RenderWindow window(sf::VideoMode((xSize+2)*elementSize, (ySize+2)*elementSize), "Project");
+	sf::RenderWindow window(sf::VideoMode((xSize + 2) * elementSize, (ySize + 2) * elementSize), "Project");
 	window.setFramerateLimit(framerate);
 
 	//creating rendering tools
 	sf::Image image;
 	sf::Texture texture;
 	sf::Sprite sprite;
-	image.create((xSize+2)*elementSize, (ySize+2)*elementSize, sf::Color::Black);
+	image.create((xSize + 2) * elementSize, (ySize + 2) * elementSize, sf::Color::Black);
 
 	//now let's create the fluid we want (x, y, diffusion, viscosity, timestep, accuracy/quality)
-	Fluid fluid(xSize, ySize, diff, visc, dt, numIterations);
+	 auto fluid = (FluidLogic*)(new Fluid(xSize, ySize, diff, visc, dt, numIterations));
 
 	while (window.isOpen())
 	{
@@ -54,21 +53,21 @@ int main()
 		mouseY = localPosition.y;
 
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-			if ((mouseX / elementSize  > 0 && mouseX / elementSize  < xSize - 1 && mouseY / elementSize  > 0 && mouseY / elementSize < ySize - 1) && (lastMouseX / elementSize  > 0 && lastMouseX / elementSize  < xSize - 1 && lastMouseY / elementSize  > 0 && lastMouseY / elementSize < ySize - 1)) {
-				fluid.AddSourceOfDensity(lastMouseX / elementSize, lastMouseY / elementSize, mouseX / elementSize, mouseY / elementSize);
+			if ((mouseX / elementSize > 0 && mouseX / elementSize < xSize - 1 && mouseY / elementSize  > 0 && mouseY / elementSize < ySize - 1) && (lastMouseX / elementSize > 0 && lastMouseX / elementSize < xSize - 1 && lastMouseY / elementSize  > 0 && lastMouseY / elementSize < ySize - 1)) {
+				fluid->AddSourceOfDensity(lastMouseX / elementSize, lastMouseY / elementSize, mouseX / elementSize, mouseY / elementSize);
 			}
 		}
 
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
-			fluid.reset();
+			fluid->reset();
 		}
-		
-		fluid.update();
-		fluid.render(elementSize, image);
+
+		fluid->update();
+		fluid->render(elementSize, image);
 		texture.loadFromImage(image);
 		sprite.setTexture(texture, true);
 		window.draw(sprite);
 		window.display();
 	}
-    return 0;
+	return 0;
 }

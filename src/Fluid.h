@@ -1,20 +1,20 @@
 #pragma once
-#include "Field.h"
+#include "FluidLogic.h"
 #include <SFML/Graphics.hpp>
 
-class Fluid
+class Fluid : FluidLogic
 {
 public:
 	//constructor and destructor
 	Fluid();
 	Fluid(int f_xSize, int f_ySize, float f_diff, float f_visc, float f_dt, int f_solverIterations);
-	~Fluid();
+	~Fluid() override;
 
 	//the public functions
-	void AddSourceOfDensity(int x0, int y0, int x, int y);
-	void update();
-	void reset();
-	void render(int sixe, sf::Image &image);
+	void AddSourceOfDensity(int x0, int y0, int x, int y) override;
+	void update() override;
+	void reset() override;
+	void render(int size, sf::Image &image) override;
 
 private:
 	//Field property declarations
@@ -41,12 +41,13 @@ private:
 	int ySize;
 
 	//fluid physics functions
-	void diffuseVelocity();
-	void diffuseDensity();
-	void advectVelocity();
-	void advectDensity();
-	void projectVelocity();
-	void setBoundary(int d, Field x);
+	void diffuseVelocity() override;
+	void diffuseDensity() override;
+	void advect() override;
+	void advectVelocity() ;
+	void advectDensity() ;
+	void projectVelocity() override;
+	void setBoundary(int d, Field x) override;
 	void swapPointers(float *&x0, float *&x1);
 };
 

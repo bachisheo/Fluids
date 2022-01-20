@@ -25,7 +25,6 @@ Fluid::Fluid(int f_xSize, int f_ySize, float f_diff, float f_visc, float f_dt, i
 	div.set(xSize, ySize);
 	p.set(xSize, ySize);
 }
-
 void Fluid::update() {
 
 	for (int x = 1; x <= xSize; x++) {
@@ -183,6 +182,8 @@ void Fluid::diffuseVelocity() {
 }
 
 
+void Fluid::advect() {}
+
 void Fluid::advectVelocity() {
 	for (int x = 1; x <= xSize; x++) {
 		for (int y = 1; y <= ySize; y++) {
@@ -320,13 +321,13 @@ void Fluid::advectDensity() {
 	setBoundary(0, density);
 }
 
-void Fluid::setBoundary(int d, Field f)
+void Fluid::setBoundary(int d, Field x)
 {
 	for (int i = 1; i <= xSize; i++) {
-		f.values[0 + (xSize + 2)*i] = (d == 1 ? -f.values[1+ (xSize + 2)*i] : f.values[1+ (xSize + 2)*i]);
-		f.values[(xSize+1) + (xSize + 2)*i] = (d == 1 ? -f.values[xSize + (xSize + 2)*i] : f.values[xSize + (xSize + 2)* i]);
-		f.values[i + (xSize + 2) * 0] = (d == 2 ? -f.values[i + (xSize + 2) * 1] : f.values[i + (xSize + 2) * 1]);
-		f.values[i + (xSize + 2) * (xSize + 1)] = (d == 2 ? -f.values[i + (xSize + 2) * (xSize)] : f.values[i + (xSize + 2) * (xSize)]);
+		x.values[0 + (xSize + 2)*i] = (d == 1 ? -x.values[1+ (xSize + 2)*i] : x.values[1+ (xSize + 2)*i]);
+		x.values[(xSize+1) + (xSize + 2)*i] = (d == 1 ? -x.values[xSize + (xSize + 2)*i] : x.values[xSize + (xSize + 2)* i]);
+		x.values[i + (xSize + 2) * 0] = (d == 2 ? -x.values[i + (xSize + 2) * 1] : x.values[i + (xSize + 2) * 1]);
+		x.values[i + (xSize + 2) * (xSize + 1)] = (d == 2 ? -x.values[i + (xSize + 2) * (xSize)] : x.values[i + (xSize + 2) * (xSize)]);
 		/*v.values[0 + (xSize + 2)*i] = 0;
 		v.values[(xSize+1) + (xSize + 2)*i] = 0;
 		v.values[i + (xSize + 2) * 0] = 0;
@@ -336,10 +337,10 @@ void Fluid::setBoundary(int d, Field f)
 		u.values[i + (xSize + 2) * 0] = 0;
 		u.values[i + (xSize + 2) * (xSize + 1)] = 0;*/
 	}
-	f.values[0 + (xSize + 2) * 0] = 0.5*(f.values[1 + (xSize + 2) * 0] + f.values[0 + (xSize + 2) * 1]);
-	f.values[0 + (xSize + 2) * (xSize + 1)] = 0.5*(f.values[1 + (xSize + 2) * (xSize + 1)] + f.values[0 + (xSize + 2) * (xSize)]);
-	f.values[xSize+1 + 0] = 0.5*(f.values[xSize + 0] + f.values[xSize + 1 + 1]);
-	f.values[xSize+1 + (xSize + 2) * (xSize + 1)] = 0.5*(f.values[xSize + (xSize + 2) * (xSize + 1)] + f.values[xSize + 1 + (xSize + 2) * (xSize)]);
+	x.values[0 + (xSize + 2) * 0] = 0.5*(x.values[1 + (xSize + 2) * 0] + x.values[0 + (xSize + 2) * 1]);
+	x.values[0 + (xSize + 2) * (xSize + 1)] = 0.5*(x.values[1 + (xSize + 2) * (xSize + 1)] + x.values[0 + (xSize + 2) * (xSize)]);
+	x.values[xSize+1 + 0] = 0.5*(x.values[xSize + 0] + x.values[xSize + 1 + 1]);
+	x.values[xSize+1 + (xSize + 2) * (xSize + 1)] = 0.5*(x.values[xSize + (xSize + 2) * (xSize + 1)] + x.values[xSize + 1 + (xSize + 2) * (xSize)]);
 
 }
 
@@ -351,4 +352,5 @@ void Fluid::swapPointers(float *&x0, float *&x1) {
 
 Fluid::~Fluid()
 {
+	int a = 2;
 }
