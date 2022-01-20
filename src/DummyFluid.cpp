@@ -3,294 +3,307 @@
 #include <corecrt_math.h>
 #include <cstdlib>
 
-FluidCube::FluidCube(int size, int diffusion, int viscosity, float dt)
+FluidCube::FluidCube(int size, float diffusion, float viscosity, float dt, int iterCount) : solverIterations(iterCount)
 {
-	int N = size;
-
-	size = size;
-	dt = dt;
-	diff = diffusion;
+	N = width = height = size;
+	_diff = diffusion;
 	visc = viscosity;
-
-	s = (float*)calloc(N * N * N, sizeof(float));
-	density = (float*)calloc(N * N * N, sizeof(float));
-
-	Vx = (float*)calloc(N * N * N, sizeof(float));
-	Vy = (float*)calloc(N * N * N, sizeof(float));
-	Vz = (float*)calloc(N * N * N, sizeof(float));
-
-	Vx0 = (float*)calloc(N * N * N, sizeof(float));
-	Vy0 = (float*)calloc(N * N * N, sizeof(float));
-	Vz0 = (float*)calloc(N * N * N, sizeof(float));
-
-}
-
-void FluidCube::AddSourceOfDensity(int x0, int y0, int x, int y)
+	this->dt = dt;
+	s = vector(height, vector<float>(width));
+	dens = vector(height, vector<float>(width));
+	dens_prev = vector(height, vector<float>(width));
+	u = vector(height, vector<float>(width));
+	v = vector(height, vector<float>(width));
+	u_prev = vector(height, vector<float>(width));
+	v_prev = vector(height, vector<float>(width));
+	}
+///1. Инициализация
+void FluidCube::addDensity(int x, int y, float value)
 {
-
+	dens_prev[x][y] = value;
 }
-void FluidCube::AddDensity(int x, int y, int z, float amount)
+void FluidCube::addDensity(vector<vector<float>>& x, const vector<vector<float>>& x0)
 {
-	int N = this->size;
-	density[IX(x, y, z)] += amount;
+	for (int i = 0; i < height; i++)
+		for (int j = 0; j < width; j++)
+			x[i][j] += dt * x0[i][j];
 }
+
+
 FluidCube::~FluidCube()
 {
 }
-
-//диффузия: плотность и скорость между соседними клетками меняется
-//для большей точности процесс повторяется k раз
-void FluidCube::diffuse(int N, int b, vector<vector<float>> x, vector<vector<float>> x0, float diff, float dt);
-
+void Gauss(vector<vector<float>>& x, const vector<vector<float>> & x0, float koef)
 {
-	int i, j, k;
-	float a = dt * diff * N * N;
-	for (k = 0; k < 20; k++) {
-		for (i = 1; i <= N; i++) {
-			for (j = 1; j <= N; j++) {
-				x[i][j] = (x0[i][j] + a * (x[i - 1][j] + x[i + 1][j] +
-					x[i][j - 1] + x[i][j + 1])) / (1 + 4 * a);
-			}
-		}
-		setBoundary(b, x);
-	}
-
-}
-void FluidCube::setBoundary(int d, vector<vector<float>> x)
-{
-}
-void FluidCube::diffuseVelocity()
-{
-}
-
-void FluidCube::diffuseDensity()
-{
-}
-
-void FluidCube::advect()
-{
-}
-
-void FluidCube::projectVelocity()
-{
-}
-
-
-
-
-void FluidCubeAddVelocity(FluidCube* cube, int x, int y, int z, float amountX, float amountY, float amountZ)
-{
-	//int N = cube->size;
-	//int index = IX(x, y, z);
-
-	//cube->Vx[index] += amountX;
-	//cube->Vy[index] += amountY;
-	//cube->Vz[index] += amountZ;
-}
-static void set_bnd(int b, float* x, int N)
-{
-	for (int j = 1; j < N - 1; j++) {
-		for (int i = 1; i < N - 1; i++) {
-			x[IX(i, j, 0)] = b == 3 ? -x[IX(i, j, 1)] : x[IX(i, j, 1)];
-			x[IX(i, j, N - 1)] = b == 3 ? -x[IX(i, j, N - 2)] : x[IX(i, j, N - 2)];
+	for (int i = 1; i < x.size() - 1; i++) {
+		for (int j = 1; j < x[i].size() - 1; j++) {
+			x[i][j] = (x0[i][j] + koef * (x[i - 1][j] + x[i + 1][j] +
+				x[i][j - 1] + x[i][j + 1])) / (4 * koef);
 		}
 	}
-	for (int k = 1; k < N - 1; k++) {
-		for (int i = 1; i < N - 1; i++) {
-			x[IX(i, 0, k)] = b == 2 ? -x[IX(i, 1, k)] : x[IX(i, 1, k)];
-			x[IX(i, N - 1, k)] = b == 2 ? -x[IX(i, N - 2, k)] : x[IX(i, N - 2, k)];
-		}
-	}
-	for (int k = 1; k < N - 1; k++) {
-		for (int j = 1; j < N - 1; j++) {
-			x[IX(0, j, k)] = b == 1 ? -x[IX(1, j, k)] : x[IX(1, j, k)];
-			x[IX(N - 1, j, k)] = b == 1 ? -x[IX(N - 2, j, k)] : x[IX(N - 2, j, k)];
-		}
-	}
-
-	x[IX(0, 0, 0)] = 0.33f * (x[IX(1, 0, 0)]
-		+ x[IX(0, 1, 0)]
-		+ x[IX(0, 0, 1)]);
-	x[IX(0, N - 1, 0)] = 0.33f * (x[IX(1, N - 1, 0)]
-		+ x[IX(0, N - 2, 0)]
-		+ x[IX(0, N - 1, 1)]);
-	x[IX(0, 0, N - 1)] = 0.33f * (x[IX(1, 0, N - 1)]
-		+ x[IX(0, 1, N - 1)]
-		+ x[IX(0, 0, N)]);
-	x[IX(0, N - 1, N - 1)] = 0.33f * (x[IX(1, N - 1, N - 1)]
-		+ x[IX(0, N - 2, N - 1)]
-		+ x[IX(0, N - 1, N - 2)]);
-	x[IX(N - 1, 0, 0)] = 0.33f * (x[IX(N - 2, 0, 0)]
-		+ x[IX(N - 1, 1, 0)]
-		+ x[IX(N - 1, 0, 1)]);
-	x[IX(N - 1, N - 1, 0)] = 0.33f * (x[IX(N - 2, N - 1, 0)]
-		+ x[IX(N - 1, N - 2, 0)]
-		+ x[IX(N - 1, N - 1, 1)]);
-	x[IX(N - 1, 0, N - 1)] = 0.33f * (x[IX(N - 2, 0, N - 1)]
-		+ x[IX(N - 1, 1, N - 1)]
-		+ x[IX(N - 1, 0, N - 2)]);
-	x[IX(N - 1, N - 1, N - 1)] = 0.33f * (x[IX(N - 2, N - 1, N - 1)]
-		+ x[IX(N - 1, N - 2, N - 1)]
-		+ x[IX(N - 1, N - 1, N - 2)]);
 }
 
-
-static void lin_solve(int b, float* x, float* x0, float a, float c, int iter, int N)
-{
-	float cRecip = 1.0 / c;
-	for (int k = 0; k < iter; k++) {
-		for (int m = 1; m < N - 1; m++) {
-			for (int j = 1; j < N - 1; j++) {
-				for (int i = 1; i < N - 1; i++) {
-					x[IX(i, j, m)] =
-						(x0[IX(i, j, m)]
-							+ a * (x[IX(i + 1, j, m)]
-								+ x[IX(i - 1, j, m)]
-								+ x[IX(i, j + 1, m)]
-								+ x[IX(i, j - 1, m)]
-								+ x[IX(i, j, m + 1)]
-								+ x[IX(i, j, m - 1)]
-								)) * cRecip;
+void FluidCube::addVelocity(int x0, int y0, int x1, int y1, float density_value) {
+	int dx = x1 - x0;
+	int dy = y1 - y0;
+	if (abs(dx) >= abs(dy)) {
+		int yi = 1;
+		if (dy < 0) {
+			yi = -1;
+			dy = -dy;
+		}
+		int D = 2 * dy - dx;
+		int y = y0;
+		int elementID = 0;
+		if (dx > 0) {
+			for (int x = x0; x <= x1; x++) {
+				elementID = x + (width + 2) * y;
+				dens_prev[x][y] = 1;
+				u_prev[x][y] = (x1 - x0) / dt;
+				v_prev[x][y] = (y1 - y0) / dt;
+				if (D > 0) {
+					y += yi;
+					D -= 2 * dx;
 				}
+				D += 2 * dy;
 			}
 		}
-		set_bnd(b, x, N);
+		else if (dx < 0) {
+			D = 2 * dy + dx;
+			for (int x = x0; x >= x1; x--) {
+				//elementID = x + (xSize + 2) * y;
+				dens_prev[x][y] = 1;
+				u_prev[x][y] = (x1 - x0) / dt;
+				v_prev[x][y] = (y1 - y0) / dt;
+				if (D > 0) {
+					y += yi;
+					D += 2 * dx;
+				}
+				D += 2 * dy;
+			}
+		}
+	}
+	else if (abs(dy) > abs(dx)) {
+		int xi = 1;
+		if (dx < 0) {
+			xi = -1;
+			dx = -dx;
+		}
+		int D = 2 * dx - dy;
+		int x = x0;
+		int elementID = 0;
+		if (dy > 0) {
+			for (int y = y0; y <= y1; y++) {
+				//elementID = x + (xSize + 2) * y;
+				dens_prev[x][y] = 1;
+				u_prev[x][y] = (x1 - x0) / dt;
+				v_prev[x][y] = (y1 - y0) / dt;
+				if (D > 0) {
+					x += xi;
+					D -= 2 * dy;
+				}
+				D += 2 * dx;
+			}
+		}
+		else if (dy < 0) {
+			D = 2 * dx + dy;
+			for (int y = y0; y >= y1; y--) {
+				//elementID = x + (xSize + 2) * y;
+				dens_prev[x][y] = 1;
+				u_prev[x][y] = (x1 - x0) / dt;
+				v_prev[x][y] = (y1 - y0) / dt;
+				if (D > 0) {
+					x += xi;
+					D += 2 * dy;
+				}
+				D += 2 * dx;
+			}
+		}
 	}
 }
-static void diffuse(int b, float* x, float* x0, float diff, float dt, int iter, int N)
+//2. диффузия: плотность и скорость между соседними клетками меняется
+
+void FluidCube::diffuse(vector<vector<float>>& x, vector<vector<float>> const& x0, float diff, int b)
 {
-	float a = dt * diff * (N - 2) * (N - 2);
-	lin_solve(b, x, x0, a, 1 + 6 * a, iter, N);
+	float a = dt * diff * width * height;
+	for (int k = 0; k < solverIterations; k++) {
+		for (int i = 1; i < x.size() - 1; i++) {
+			for (int j = 1; j < x[i].size() - 1; j++) {
+				x[i][j] = (x0[i][j] + a * (x[i - 1][j] + x[i + 1][j] +
+					x[i][j - 1] + x[i][j + 1])) / ( 1 + 4 * a);
+			}
+		}
+		setBoundary(x, b);
+	}
 }
-static void project(float* velocX, float* velocY, float* velocZ, float* p, float* div, int iter, int N)
+
+void FluidCube::setBoundary(vector<vector<float>> & x, int b)
 {
-	for (int k = 1; k < N - 1; k++) {
-		for (int j = 1; j < N - 1; j++) {
-			for (int i = 1; i < N - 1; i++) {
-				div[IX(i, j, k)] = -0.5f * (
-					velocX[IX(i + 1, j, k)]
-					- velocX[IX(i - 1, j, k)]
-					+ velocY[IX(i, j + 1, k)]
-					- velocY[IX(i, j - 1, k)]
-					+ velocZ[IX(i, j, k + 1)]
-					- velocZ[IX(i, j, k - 1)]
-					) / N;
-				p[IX(i, j, k)] = 0;
-			}
-		}
-	}
-	set_bnd(0, div, N);
-	set_bnd(0, p, N);
-	lin_solve(0, p, div, 1, 6, iter, N);
+	float neg = -1.0;
+	for (int i = 1; i < N; i++) {
+		x[0][i] = x[1][i];
+		x[N - 1][i] = x[N - 2][i];
+		x[i][0] = x[i][1];
+		x[i][N - 1] =  x[i][N - 2];
 
-	for (int k = 1; k < N - 1; k++) {
-		for (int j = 1; j < N - 1; j++) {
-			for (int i = 1; i < N - 1; i++) {
-				velocX[IX(i, j, k)] -= 0.5f * (p[IX(i + 1, j, k)]
-					- p[IX(i - 1, j, k)]) * N;
-				velocY[IX(i, j, k)] -= 0.5f * (p[IX(i, j + 1, k)]
-					- p[IX(i, j - 1, k)]) * N;
-				velocZ[IX(i, j, k)] -= 0.5f * (p[IX(i, j, k + 1)]
-					- p[IX(i, j, k - 1)]) * N;
-			}
+
+		/*if (b == 1)
+		{
+			//x[0][i]
 		}
+		
+		x[0][i] = b == 1 ? neg * x[1][i] : x[1][i];
+		x[N+1][i] = b == 1 ? neg * x[N][i] : x[N][i];
+		x[i][0] = b == 2 ?  neg * x[i][1] : x[i][1];
+		x[i][N+1] = b == 2 ? neg* x[i][N] : x[i][N];
+		*/
 	}
-	set_bnd(1, velocX, N);
-	set_bnd(2, velocY, N);
-	set_bnd(3, velocZ, N);
+	x[0][0] = 0.5f * (x[1][0] + x[0][1]);
+	x[0][N-1] = 0.5f * (x[1][N -2] + x[0][N - 1]);
+	x[N-1][0] = 0.5f * (x[N-2][0] + x[N-1][1]);
+	x[N-1][N-1] = 0.5f * (x[N-1][N-2] + x[N-2][N-1]);
 }
-static void advect(int b, float* d, float* d0, float* velocX, float* velocY, float* velocZ, float dt, int N)
+
+//3. адвекция -- перенос потоков
+
+void FluidCube::advection(vector<vector<float>> &d, vector<vector<float>> &d0, float dt, int b)
 {
-	float i0, i1, j0, j1, k0, k1;
+	advection(d, d0, u, v, dt, b);
+}
 
-	float dtx = dt * (N - 2);
-	float dty = dt * (N - 2);
-	float dtz = dt * (N - 2);
 
-	float s0, s1, t0, t1, u0, u1;
-	float tmp1, tmp2, tmp3, x, y, z;
+void FluidCube::advection(vector<vector<float>> & d, vector<vector<float>>& d0, vector<vector<float>> &_u, vector<vector<float>>& _v, float dt, int b)
+{
+	float dt0 = dt * N;
+	for (int i = 1; i < N; i++) {
+		for (int j = 1; j < N; j++) {
+			float x = i - dt0 * _u[i][j];
+			float y = j - dt0 * _v[i][j];
+			if (x < 0.5)
+				x = 0.5;
+			if (x > N + 0.5)
+				x = N + 0.5;
+			//int i0 = std::min((int)x, height - 2);
+			auto i0 = (int)x;
+			int i1 = std::min(i0 + 1, height- 1);
+			if (y < 0.5)
+				y = 0.5;
+			if (y > N + 0.5)
+				y = N + 0.5;
+			//int j0 = std::min((int)y, width - 2);
+			auto j0 = (int)y;
 
-	float Nfloat = N;
-	float ifloat, jfloat, kfloat;
-	int i, j, k;
-
-	for (k = 1, kfloat = 1; k < N - 1; k++, kfloat++) {
-		for (j = 1, jfloat = 1; j < N - 1; j++, jfloat++) {
-			for (i = 1, ifloat = 1; i < N - 1; i++, ifloat++) {
-				tmp1 = dtx * velocX[IX(i, j, k)];
-				tmp2 = dty * velocY[IX(i, j, k)];
-				tmp3 = dtz * velocZ[IX(i, j, k)];
-				x = ifloat - tmp1;
-				y = jfloat - tmp2;
-				z = kfloat - tmp3;
-
-				if (x < 0.5f) x = 0.5f;
-				if (x > Nfloat + 0.5f) x = Nfloat + 0.5f;
-				i0 = floorf(x);
-				i1 = i0 + 1.0f;
-				if (y < 0.5f) y = 0.5f;
-				if (y > Nfloat + 0.5f) y = Nfloat + 0.5f;
-				j0 = floorf(y);
-				j1 = j0 + 1.0f;
-				if (z < 0.5f) z = 0.5f;
-				if (z > Nfloat + 0.5f) z = Nfloat + 0.5f;
-				k0 = floorf(z);
-				k1 = k0 + 1.0f;
-
-				s1 = x - i0;
-				s0 = 1.0f - s1;
-				t1 = y - j0;
-				t0 = 1.0f - t1;
-				u1 = z - k0;
-				u0 = 1.0f - u1;
-
-				int i0i = i0;
-				int i1i = i1;
-				int j0i = j0;
-				int j1i = j1;
-				int k0i = k0;
-				int k1i = k1;
-
-				d[IX(i, j, k)] =
-
-					s0 * (t0 * (u0 * d0[IX(i0i, j0i, k0i)]
-						+ u1 * d0[IX(i0i, j0i, k1i)])
-						+ (t1 * (u0 * d0[IX(i0i, j1i, k0i)]
-							+ u1 * d0[IX(i0i, j1i, k1i)])))
-					+ s1 * (t0 * (u0 * d0[IX(i1i, j0i, k0i)]
-						+ u1 * d0[IX(i1i, j0i, k1i)])
-						+ (t1 * (u0 * d0[IX(i1i, j1i, k0i)]
-							+ u1 * d0[IX(i1i, j1i, k1i)])));
-			}
+			int j1 = std::min(j0 + 1, width - 1);
+			float s1 = x - i0;
+			float s0 = 1 - s1;
+			float t1 = y - j0;
+			float t0 = 1 - t1;
+			d[i][j] = s0 * (t0 * d0[i0][j0] + t1 * d0[i0][j1]) +
+				s1 * (t0 * d0[i1][j0] + t1 * d0[i1][j1]);
 		}
 	}
-	set_bnd(b, d, N);
+	setBoundary(d, b);
 }
+
+
 void FluidCube::update()
 {
-	/*diffuse(1, Vx0, Vx, visc, dt, 4, size);
-	diffuse(2, Vy0, Vy, visc, dt, 4, size);
-	diffuse(3, Vz0, Vz, visc, dt, 4, size);
+	vel_step();
+	dens_step();
+	dens_prev = vector(height, vector<float>(width));
+	u_prev = vector(height, vector<float>(width));
+	v_prev = vector(height, vector<float>(width));
+	//и рисуем денс
+}
 
-	project(Vx0, Vy0, Vz0, Vx, Vy, 4, size);
+//шаги 1-3 можно объединить
+//это решение плотности
+void FluidCube::dens_step()
+{
+	addDensity(dens, dens_prev);
+	std::swap(dens_prev, dens);
+	diffuse( dens, dens_prev, _diff, 0);
+	std::swap(dens_prev, dens);
+	advection(dens, dens_prev, dt, 0);
 
-	advect(1, Vx, Vx0, Vx0, Vy0, Vz0, dt, size);
-	advect(2, Vy, Vy0, Vx0, Vy0, Vz0, dt, size);
-	advect(3, Vz, Vz0, Vx0, Vy0, Vz0, dt, size);
+}
+void FluidCube::vel_step()
+{
+	addDensity(u, u_prev); 
+	addDensity(v, v_prev);
 
-	project(Vx, Vy, Vz, Vx0, Vy0, 4, size);
+	std::swap(u_prev, u);
+	diffuse(u, u_prev, visc, 1);
+	std::swap(v_prev, v);
+	diffuse(v, v_prev, visc, 2);
 
-	diffuse(0, s, density, diff, dt, 4, size);
-	advect(0, density, s, Vx, Vy, Vz, dt, size);
-	*/
+	projectVelocity( u_prev, v_prev);
+
+	std::swap(u_prev, u); 
+	std::swap(v_prev, v);
+	advection(u, u_prev, u_prev, v_prev, dt, 1);
+	advection(v, v_prev, u_prev, v_prev, dt, 2);
+	projectVelocity(u_prev, v_prev);
+
+}
+void FluidCube::projectVelocity(vector<vector<float>> & div, vector<vector<float>>& p)
+{
+	int i, j, k;
+	float h;
+	h = 1.0 / N;
+	for (i = 1; i < N - 1; i++) {
+		for (j = 1; j < N - 1; j++) {
+			div[i][j] = -0.5 * h * (u[i + 1][j] - u[i-1][j] +
+				v[i][j+1] - v[i][j-1]);
+			p[i][j] = 0;
+		}
+	}
+	setBoundary(div, 0);
+	setBoundary(p, 0);
+	for (k = 0; k < solverIterations; k++) {
+		Gauss(p, div, 1);
+		setBoundary(p, 0);
+	}
+	for (i = 1; i < height - 1; i++) {
+		for (j = 1; j < width - 1; j++) {
+			u[i][j] -= 0.5 * (p[i+1][j] - p[i-1][j]) / h;
+			v[i][j] -= 0.5 * (p[i][j+1] - p[i][j-1]) / h;
+		}
+	}
+	setBoundary(u, 1); 
+	setBoundary(v, 2);
 }
 
 void FluidCube::reset()
 {
+	s = vector(height, vector<float>(width, 0));
+	dens = vector(height, vector<float>(width, 0));
+	dens_prev = vector(height, vector<float>(width, 0));
+	u = vector(height, vector<float>(width, 0));
+	v = vector(height, vector<float>(width, 0));
+	u_prev = vector(height, vector<float>(width, 0));
+	v_prev = vector(height, vector<float>(width, 0));
 }
 
-void FluidCube::render(int size, sf::Image& image)
+void FluidCube::render(int pixelOnFluidParticle, sf::Image& image)
 {
+	//draw pixel by pixel
+	for (int i = 0; i < height ; i++) {
+		for (int j = 0; j < width; j++) {
+			if (dens[i][j] > 1) {
+				dens[i][j] = 1;
+			}
+			for (int ii = 0; ii <= pixelOnFluidParticle; ii++) {
+				for (int jj = 0; jj <= pixelOnFluidParticle; jj++) {
+					auto a = 255 * dens[i][j];
+					image.setPixel(i * pixelOnFluidParticle + ii, j * pixelOnFluidParticle + jj, sf::Color(a, a, a));
+				}
+			}
+			//density0.values[i + j * (xSize + 2)] = density.values[i + j * (xSize + 2)];
+			//u0.values[i + j * (xSize + 2)] = u.values[i + j * (xSize + 2)];
+			//v0.values[i + j * (xSize + 2)] = v.values[i + j * (xSize + 2)];
+		}
+	}
 }
 
 

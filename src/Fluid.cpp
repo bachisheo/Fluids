@@ -182,7 +182,7 @@ void Fluid::diffuseVelocity() {
 }
 
 
-void Fluid::advect() {}
+void Fluid::advection() {}
 
 void Fluid::advectVelocity() {
 	for (int x = 1; x <= xSize; x++) {

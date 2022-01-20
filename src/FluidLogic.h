@@ -14,7 +14,7 @@ public:
 protected:
 	virtual void diffuseVelocity() = 0;
 	virtual void diffuseDensity() = 0;
-	virtual void advect() = 0;
+	virtual void advection() = 0;
 	virtual void projectVelocity() = 0;
 	virtual void setBoundary(int d, Field x) = 0;
 

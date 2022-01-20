@@ -43,7 +43,7 @@ private:
 	//fluid physics functions
 	void diffuseVelocity() override;
 	void diffuseDensity() override;
-	void advect() override;
+	void advection() override;
 	void advectVelocity() ;
 	void advectDensity() ;
 	void projectVelocity() override;
