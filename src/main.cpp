@@ -1,44 +1,79 @@
+#include <functional>
+#include <iostream>
+
 #include "Fluid.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Image.hpp>
+#include <SFML/System/Clock.hpp>
 
 #include "DummyFluid.h"
 
+void drawLine(sf::Vector2i p0, sf::Vector2i p1, std::function<void(int x, int y, int dx, int dy)> handler)
+{
+	auto p = p0;
+	auto fdx = p1.x - p0.x;
+	auto fdy = p1.y - p0.y;
+	auto dx = abs(p0.x - p1.x);
+	auto sx = p0.x < p1.x ? 1 : -1;
+	auto dy = -abs(p1.y - p0.y);
+	auto sy = p0.y < p1.y ? 1 : -1;
+	auto err = dx + dy;
+	while (true)
+	{
+		handler(p.x, p.y, fdx, fdy);
+		if (p == p1) break;
+		auto e2 = 2 * err;
+		if (e2 >= dy)
+		{
+			err += dy;
+			p.x += sx;
+		}
+		if (e2 <= dx)
+		{
+			err += dx;
+			p.y += sy;
+		}
+	}
+}
 int main()
 {
 	//fluid parameters
-	int xSize, ySize ;
-	xSize = ySize = 50;
-	int elementSize = 20;
-	float diff = 0.207;
-	float visc = 0.9975;
-	float dens_value = 100;
+	int xSize, ySize;
+	xSize = ySize = 300;
+	int elementSize = 3;
+	float diff = 0.07;
+	float visc = 0.4975;
+	float dens_value = 300;
 	//simulation parameters
-	int framerate = 60;
-	float dt = 1.0 / framerate;
-	int numIterations = 50;
+	int numIterations = 5;
 	float eps = 1;
 	//mouse parameters
 	int mouseX = 0;
 	int mouseY = 0;
-	int lastMouseX = 0;
-	int lastMouseY = 0;
 
 	//setting up render window
-	sf::RenderWindow window(sf::VideoMode((xSize) * elementSize + 1, (ySize) * elementSize + 1), "Project");
-	window.setFramerateLimit(framerate);
+	sf::RenderWindow window(sf::VideoMode((xSize)*elementSize + 1, (ySize)*elementSize + 1), "Project");
+
 
 	//creating rendering tools
 	sf::Image image;
 	sf::Texture texture;
 	sf::Sprite sprite;
-	image.create((xSize) * elementSize + 1, (ySize) * elementSize + 1, sf::Color::Black);
+	image.create((xSize)*elementSize + 1, (ySize)*elementSize + 1, sf::Color::Black);
 
 	//now let's create the fluid we want (x, y, diffusion, viscosity, timestep, accuracy/quality)
-	 auto fluid = new FluidCube(ySize, diff, visc, dt, numIterations);
+	auto fluid = new FluidCube(ySize, diff, visc,  numIterations);
+	sf::Vector2i prevPosition = sf::Mouse::getPosition(window);
+	int lastMouseX = prevPosition.x;
+	int lastMouseY = prevPosition.y;
+	bool is_pressed = 0;
+	sf::Clock clock;
 	while (window.isOpen())
 	{
-		//window details
+		auto dt = clock.getElapsedTime().asSeconds();
+		if (dt == 0) continue;
+		clock.restart();
+
 		sf::Event event;
 		while (window.pollEvent(event))
 		{
@@ -46,95 +81,40 @@ int main()
 				window.close();
 			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
 				window.close();
-		}
+			if (event.type == sf::Event::MouseMoved) {
+				lastMouseX = mouseX;
+				lastMouseY = mouseY;
+				sf::Vector2i localPosition = { event.mouseMove.x, event.mouseMove.y };
+				prevPosition = { lastMouseX,lastMouseY };
+				mouseX = localPosition.x;
+				mouseY = localPosition.y;
+		
+				drawLine(prevPosition, localPosition, [&fluid, elementSize, dt](int x, int y, int dx, int dy) { fluid->addVelocity(x / elementSize, y / elementSize, dx / elementSize, dy / elementSize, dt); });
 
-		lastMouseX = mouseX;
-		lastMouseY = mouseY;
-		sf::Vector2i localPosition = sf::Mouse::getPosition(window);
-		mouseX = localPosition.x;
-		mouseY = localPosition.y;
-
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-			if ((mouseX / elementSize > 0 && mouseX / elementSize < xSize - 1 && mouseY / elementSize  > 0 && mouseY / elementSize < ySize - 1) && (lastMouseX / elementSize > 0 && lastMouseX / elementSize < xSize - 1 && lastMouseY / elementSize  > 0 && lastMouseY / elementSize < ySize - 1)) {
-						 fluid->addDensity(lastMouseX / elementSize, lastMouseY / elementSize, dens_value);
 			}
+			if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+			{
+				is_pressed = true;
+			}
+			if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+			{
+				is_pressed = false;
+			}
+			
 		}
-
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
-			fluid->reset();
-		}
-		fluid->update();
-		fluid->render(elementSize, image);
-		texture.loadFromImage(image);
-		sprite.setTexture(texture, true);
-		window.draw(sprite);
-		window.display();
-	}
-	return 0;
-}
-
-int main2()
-{
-	//fluid parameters
-	int xSize = 50;
-	int ySize = 50;
-	int elementSize = 20;
-	float diff = 0.0907;
-	float visc = 0.5975;
-
-	//simulation parameters
-	int framerate = 60;
-	float dt = 1.0 / framerate;
-	int numIterations = 5;
-
-	//mouse parameters
-	int mouseX = 0;
-	int mouseY = 0;
-	int lastMouseX = 0;
-	int lastMouseY = 0;
-
-	//setting up render window
-	sf::RenderWindow window(sf::VideoMode((xSize + 2) * elementSize, (ySize + 2) * elementSize), "Project");
-	window.setFramerateLimit(framerate);
-
-	//creating rendering tools
-	sf::Image image;
-	sf::Texture texture;
-	sf::Sprite sprite;
-	image.create((xSize + 2) * elementSize, (ySize + 2) * elementSize, sf::Color::Black);
-
-	//now let's create the fluid we want (x, y, diffusion, viscosity, timestep, accuracy/quality)
-	auto fluid = (FluidLogic*)(new Fluid(xSize, ySize, diff, visc, dt, numIterations));
-
-	while (window.isOpen())
-	{
-		//window details
-		sf::Event event;
-		while (window.pollEvent(event))
+		if (is_pressed)
 		{
-			if (event.type == sf::Event::Closed)
-				window.close();
-			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
-				window.close();
+			fluid->addDensity(lastMouseX / elementSize, lastMouseY / elementSize, dens_value);
+			drawLine({mouseX, mouseY}, { mouseX, mouseY-10 }, [&fluid, elementSize, dt](int x, int y, int dx, int dy) { fluid->addVelocity(x / elementSize, y / elementSize, dx / elementSize, dy / elementSize, dt); });
+
 		}
 
-		lastMouseX = mouseX;
-		lastMouseY = mouseY;
-		sf::Vector2i localPosition = sf::Mouse::getPosition(window);
-		mouseX = localPosition.x;
-		mouseY = localPosition.y;
-
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-			if ((mouseX / elementSize > 0 && mouseX / elementSize < xSize - 1 && mouseY / elementSize  > 0 && mouseY / elementSize < ySize - 1) && (lastMouseX / elementSize > 0 && lastMouseX / elementSize < xSize - 1 && lastMouseY / elementSize  > 0 && lastMouseY / elementSize < ySize - 1)) {
-				fluid->AddSourceOfDensity(lastMouseX / elementSize, lastMouseY / elementSize, mouseX / elementSize, mouseY / elementSize);
-			}
-		}
-
+		
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
 			fluid->reset();
 		}
-
-		fluid->update();
+		window.clear();
+		fluid->update(dt);
 		fluid->render(elementSize, image);
 		texture.loadFromImage(image);
 		sprite.setTexture(texture, true);

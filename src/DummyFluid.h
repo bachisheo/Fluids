@@ -4,28 +4,27 @@
 using std::vector;
 class FluidCube {
 public:
-	FluidCube(int size, float diffusion, float viscosity, float dt, int iterCount);
+	FluidCube(int size, float diffusion, float viscosity,  int iterCount);
 	void addDensity(int x, int y, float value);
-	void addDensity(vector<vector<float>>& x, const vector<vector<float>> & x0);
-	void update() ;
-	void dens_step();
-	void vel_step();
+	void addDensity(vector<vector<float>>& x, const vector<vector<float>>& x0, float dt);
+	void addVelocity(int x, int y, int dx, int dy, float dt);
+	void update(float dt) ;
+	void dens_step(float dt);
+	void vel_step(float dt);
 	void reset() ;
 	void render(int pixelOnFluidParticle, sf::Image& image) ;
 	~FluidCube() ;
 	void diffuseVelocity() ;
 	void diffuseDensity() ;
-	void addVelocity(int x0, int y0, int x1, int y1, float density_value);
-	void diffuse(vector<vector<float>>& x, vector<vector<float>> const& x0, float diff, int b);
+	void diffuse(vector<vector<float>>& x, vector<vector<float>> const& x0, float diff, int b, float dt);
 	void advection(vector<vector<float>>& d, vector<vector<float>>& d0, vector<vector<float>>& _u, vector<vector<float>>& _v, float dt, int b) ;
 	void advection(vector<vector<float>>& d, vector<vector<float>>& d0, float dt, int b) ;
-
+	float speed = 50;
 
 	void projectVelocity() ;
 	void projectVelocity(vector<vector<float>>& div, vector<vector<float>>& p);
 	virtual void setBoundary(vector<vector<float>> & x, int b) ;
 private:
-	float dt;
 	float visc;
 	float _diff;
 	int height, width, N;
