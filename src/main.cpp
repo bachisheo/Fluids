@@ -1,6 +1,7 @@
 #include "Fluid.h"
 #include <SFML/Graphics.hpp>
 
+
 int main()
 {
 	//fluid parameters
@@ -54,7 +55,7 @@ int main()
 
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
 			if ((mouseX / elementSize  > 0 && mouseX / elementSize  < xSize - 1 && mouseY / elementSize  > 0 && mouseY / elementSize < ySize - 1) && (lastMouseX / elementSize  > 0 && lastMouseX / elementSize  < xSize - 1 && lastMouseY / elementSize  > 0 && lastMouseY / elementSize < ySize - 1)) {
-				fluid.addSource(lastMouseX / elementSize, lastMouseY / elementSize, mouseX / elementSize, mouseY / elementSize);
+				fluid.AddSourceOfDensity(lastMouseX / elementSize, lastMouseY / elementSize, mouseX / elementSize, mouseY / elementSize);
 			}
 		}
 

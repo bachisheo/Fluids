@@ -90,7 +90,7 @@ void Fluid::render(int size, sf::Image &image) {
 		}
 	}
 }
-void Fluid::addSource(int x0, int y0, int x1, int y1) {
+void Fluid::AddSourceOfDensity(int x0, int y0, int x1, int y1) {
 	int dx = x1 - x0;
 	int dy = y1 - y0;
 	if (abs(dx) >= abs(dy)) {

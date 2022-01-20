@@ -11,7 +11,7 @@ public:
 	~Fluid();
 
 	//the public functions
-	void addSource(int x0, int y0, int x, int y);
+	void AddSourceOfDensity(int x0, int y0, int x, int y);
 	void update();
 	void reset();
 	void render(int sixe, sf::Image &image);

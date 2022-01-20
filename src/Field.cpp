@@ -11,7 +11,7 @@ void Field::set(int xSize, int ySize) {
 	xy = (x + 2) * (y + 2);
 	values = new float[(xSize+2)*(ySize+2)];
 	for (int i = 0; i < xy; i++) {
-		values[i] = 20;
+		values[i] = 0;
 	}
 }
 
