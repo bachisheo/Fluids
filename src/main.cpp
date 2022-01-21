@@ -1,4 +1,5 @@
 #include <functional>
+#include <imgui-SFML.h>
 #include <iostream>
 
 #include "Fluid.h"
@@ -7,6 +8,7 @@
 #include <SFML/System/Clock.hpp>
 
 #include "DummyFluid.h"
+#include "ImguiWindow.h"
 
 void drawLine(sf::Vector2i p0, sf::Vector2i p1, std::function<void(int x, int y, int dx, int dy)> handler)
 {
@@ -39,11 +41,11 @@ int main()
 {
 	//fluid parameters
 	int xSize, ySize;
-	xSize = ySize = 300;
-	int elementSize = 3;
+	xSize = ySize =400;
+	int elementSize = 2;
 	float diff = 0.05;
 	float visc = 0.4975;
-	float dens_value = 20;
+	float dens_value = 10;
 	//simulation parameters
 	int numIterations = 5;
 	float eps = 1;
@@ -54,7 +56,6 @@ int main()
 	//setting up render window
 	sf::RenderWindow window(sf::VideoMode((xSize)*elementSize + 1, (ySize)*elementSize + 1), "Project");
 
-
 	//creating rendering tools
 	sf::Image image;
 	sf::Texture texture;
@@ -62,17 +63,19 @@ int main()
 	image.create((xSize)*elementSize + 1, (ySize)*elementSize + 1, sf::Color::Black);
 
 	//now let's create the fluid we want (x, y, diffusion, viscosity, timestep, accuracy/quality)
-	auto fluid = new FluidCube(ySize, diff, visc,  numIterations);
+	auto fluid = FluidCube(ySize, diff, visc, numIterations);
 	sf::Vector2i prevPosition = sf::Mouse::getPosition(window);
 	int lastMouseX = prevPosition.x;
 	int lastMouseY = prevPosition.y;
 	bool is_pressed = 0;
 	sf::Clock clock;
+
+	ImguiWindow imguiWindow(&fluid);
+
 	while (window.isOpen())
 	{
-		auto dt = clock.getElapsedTime().asSeconds();
-		if (dt == 0) continue;
-		clock.restart();
+		auto dt = clock.restart().asSeconds();
+		if (dt == 0) dt = 1e-3f;
 
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -88,11 +91,15 @@ int main()
 				prevPosition = { lastMouseX,lastMouseY };
 				mouseX = localPosition.x;
 				mouseY = localPosition.y;
-		
-				drawLine(prevPosition, localPosition, [&fluid, elementSize, dt](int x, int y, int dx, int dy) { fluid->addVelocity(x / elementSize, y / elementSize, dx / elementSize, dy / elementSize, dt); });
+
+				drawLine(prevPosition, localPosition, [&fluid, elementSize, dt](int x, int y, int dx, int dy)
+				{
+					fluid.addVelocity(x / elementSize, y / elementSize, dx / elementSize, dy / elementSize,
+					                   dt);
+				});
 
 			}
-			if(event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+			if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
 			{
 				is_pressed = true;
 			}
@@ -100,27 +107,30 @@ int main()
 			{
 				is_pressed = false;
 			}
-			
+
 		}
+		imguiWindow.pollEvents();
+
 		if (is_pressed)
 		{
-
-			fluid->addDensity(lastMouseX / elementSize, lastMouseY / elementSize, dens_value);
-			drawLine({mouseX, mouseY}, { mouseX, mouseY-10 }, [&fluid, elementSize, dt](int x, int y, int dx, int dy) { fluid->addVelocity(x / elementSize, y / elementSize, dx / elementSize, dy / elementSize, dt); });
+			fluid.addDensity(lastMouseX / elementSize, lastMouseY / elementSize, dens_value);
+			drawLine({ mouseX, mouseY }, { mouseX, mouseY - 10 }, [&fluid, elementSize, dt](int x, int y, int dx, int dy) { fluid.addVelocity(x / elementSize, y / elementSize, dx / elementSize, dy / elementSize, dt); });
 			drawLine({ lastMouseX, lastMouseY }, { mouseX, mouseY },
-				[&fluid, elementSize, lastMouseX, lastMouseY, dens_value](int x, int y, int dx, int dy) { fluid->addDensity(x / elementSize, y / elementSize, dens_value); });
+				[&fluid, elementSize, lastMouseX, lastMouseY, dens_value](int x, int y, int dx, int dy) { fluid.addDensity(x / elementSize, y / elementSize, dens_value); });
 		}
 
-		
+
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
-			fluid->reset();
+			fluid.reset();
 		}
+		fluid.update(dt);
+		imguiWindow.update(dt);
 		window.clear();
-		fluid->update(dt);
-		fluid->render(elementSize, image);
+		fluid.render(elementSize, image);
 		texture.loadFromImage(image);
 		sprite.setTexture(texture, true);
 		window.draw(sprite);
+		imguiWindow.draw();
 		window.display();
 	}
 	return 0;

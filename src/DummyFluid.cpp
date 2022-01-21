@@ -1,8 +1,6 @@
 ﻿#include "DummyFluid.h"
 
-#include <corecrt_math.h>
-#include <cstdlib>
-#include <iostream>
+#include <valarray>
 
 FluidCube::FluidCube(int size, float diffusion, float viscosity, int iterCount) : solverIterations(iterCount)
 {
@@ -22,9 +20,8 @@ void FluidCube::addDensity(int x, int y, float value)
 {
 	x = std::clamp(x, 0, N - 1);
 	y = std::clamp(y, 0, N - 1);
-	int r = 5;
-	for (int i = -r; i <= r; i++)
-		for (int j = -r; j <= r; j++)
+	for (int i = -_cursorRadius; i <= _cursorRadius; i++)
+		for (int j = -_cursorRadius; j <= _cursorRadius; j++)
 		{
 			int x1 = x + i, y1 = y + j;
 			if (x1 >= 0 && x1 < N && y1>0 && y1 < N)
@@ -77,6 +74,7 @@ void FluidCube::diffuse(vector<vector<float>>& x, vector<vector<float>> const& x
 
 void FluidCube::setBoundary(vector<vector<float>>& x, int b)
 {
+	
 	float neg = -1.0;
 	for (int i = 1; i < N; i++) {
 		x[0][i] = x[1][i];
@@ -114,15 +112,15 @@ void FluidCube::advection(vector<vector<float>>& d, vector<vector<float>>& d0, f
 void FluidCube::advection(vector<vector<float>>& d, vector<vector<float>>& d0, vector<vector<float>>& _u, vector<vector<float>>& _v, float dt, int b)
 {
 	float dt0 = dt;
-	for (int i = 1; i < N; i++) {
-		for (int j = 1; j < N; j++) {
+	for (int i = 1; i < N - 1; i++) {
+		for (int j = 1; j < N - 1; j++) {
 			float x = i - dt0 * _u[i][j];
 			float y = j - dt0 * _v[i][j];
 
 			if (x < 0.5)
 				x = 0.5;
-			if (x > N + 0.5)
-				x = N + 0.5;
+			if (x > N - 1 + 0.5)
+				x = N - 1 + 0.5;
 			int i0 = std::min((int)x, height - 2);
 
 			int i1 = std::min(i0 + 1, height - 1);
@@ -145,9 +143,10 @@ void FluidCube::advection(vector<vector<float>>& d, vector<vector<float>>& d0, v
 }
 
 
+
 void FluidCube::update(float dt)
 {
-	
+
 	vel_step(dt);
 	dens_step(dt);
 	dens_prev = vector(height, vector<float>(width));
@@ -242,8 +241,8 @@ sf::Color GetGradientColor(float t)
 void FluidCube::render(int pixelOnFluidParticle, sf::Image& image)
 {
 	//draw pixel by pixel
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
+	for (int i = 0; i < width; i++) {
+		for (int j = 0; j < height; j++) {
 			auto coef = std::min(1.f, dens[i][j]);
 
 			for (int ii = 0; ii <= pixelOnFluidParticle; ii++) {
