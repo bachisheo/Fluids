@@ -1,6 +1,9 @@
-﻿#include "DummyFluid.h"
+﻿#include "MyFluid.h"
 
+#include <algorithm>
 #include <valarray>
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Image.hpp>
 
 FluidCube::FluidCube(int size, float diffusion, float viscosity, int iterCount) : solverIterations(iterCount)
 {
@@ -41,8 +44,6 @@ void FluidCube::addVelocity(int x, int y, int dx, int dy, float dt)
 	y = std::clamp(y, 0, width - 1);
 	v_prev[x][y] = (float)dy / dt * speed;
 	u_prev[x][y] = (float)dx / dt * speed;
-
-
 }
 
 void Gauss(vector<vector<float>>& x, const vector<vector<float>>& x0, float koef)
@@ -116,7 +117,6 @@ void FluidCube::advection(vector<vector<float>>& d, vector<vector<float>>& d0, v
 		for (int j = 1; j < N - 1; j++) {
 			float x = i - dt0 * _u[i][j];
 			float y = j - dt0 * _v[i][j];
-
 			if (x < 0.5)
 				x = 0.5;
 			if (x > N - 1 + 0.5)
@@ -237,6 +237,11 @@ sf::Color GetGradientColor(float t)
 	int g = 255 * std::max(0.f, t - 2);
 	int b = 255 * (t < 2 ? std::max(0.f, 1 - bt) : t - 2);
 	return sf::Color(r, g, b);
+}
+sf::Color GetGrayGradient(float t)
+{
+	int a =  std::clamp((int)(255 * t), 0, 255);
+	return sf::Color(a, a, a);
 }
 void FluidCube::render(int pixelOnFluidParticle, sf::Image& image)
 {

@@ -2,12 +2,11 @@
 #include <imgui-SFML.h>
 #include <iostream>
 
-#include "Fluid.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/System/Clock.hpp>
 
-#include "DummyFluid.h"
+#include "MyFluid.h"
 #include "ImguiWindow.h"
 
 void drawLine(sf::Vector2i p0, sf::Vector2i p1, std::function<void(int x, int y, int dx, int dy)> handler)

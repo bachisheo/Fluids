@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <SFML/Graphics/RenderWindow.hpp>
-#include "DummyFluid.h"
+#include "MyFluid.h"
 
 class ImguiWindow 
 {

@@ -1,6 +1,7 @@
 ﻿#pragma once
 #define IX(x, y, z) ((x) + (y) * N + (z) * N * N)
-#include "FluidLogic.h"
+#include <vector>
+#include <SFML/Graphics/Image.hpp>
 using std::vector;
 class FluidCube {
 public:
