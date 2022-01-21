@@ -230,7 +230,15 @@ void FluidCube::reset()
 	u_prev = vector(height, vector<float>(width, 0));
 	v_prev = vector(height, vector<float>(width, 0));
 }
-
+sf::Color GetGradientColor(float t)
+{
+	t *= 3;
+	float bt = abs(1 - t);
+	int r = 255 * std::clamp(t - 1, 0.f, 1.f);
+	int g = 255 * std::max(0.f, t - 2);
+	int b = 255 * (t < 2 ? std::max(0.f, 1 - bt) : t - 2);
+	return sf::Color(r, g, b);
+}
 void FluidCube::render(int pixelOnFluidParticle, sf::Image& image)
 {
 	//draw pixel by pixel
@@ -240,9 +248,9 @@ void FluidCube::render(int pixelOnFluidParticle, sf::Image& image)
 
 			for (int ii = 0; ii <= pixelOnFluidParticle; ii++) {
 				for (int jj = 0; jj <= pixelOnFluidParticle; jj++) {
-					auto a = 255 * std::pow(coef,0.5f);
+					auto a = std::pow(coef, 0.5f);
 
-					image.setPixel(i * pixelOnFluidParticle + ii, j * pixelOnFluidParticle + jj, sf::Color(255*coef, 0, 255 * (1-coef), a));
+					image.setPixel(i * pixelOnFluidParticle + ii, j * pixelOnFluidParticle + jj, GetGradientColor(coef));
 				}
 			}
 			//density0.values[i + j * (xSize + 2)] = density.values[i + j * (xSize + 2)];
