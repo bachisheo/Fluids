@@ -22,8 +22,14 @@ void FluidCube::addDensity(int x, int y, float value)
 {
 	x = std::clamp(x, 0, N - 1);
 	y = std::clamp(y, 0, N - 1);
-
-	dens_prev[x][y] = value;
+	int r = 5;
+	for (int i = -r; i <= r; i++)
+		for (int j = -r; j <= r; j++)
+		{
+			int x1 = x + i, y1 = y + j;
+			if (x1 >= 0 && x1 < N && y1>0 && y1 < N)
+				dens_prev[x1][y1] = value;
+		}
 }
 void FluidCube::addDensity(vector<vector<float>>& x, const vector<vector<float>>& x0, float dt)
 {
@@ -39,13 +45,9 @@ void FluidCube::addVelocity(int x, int y, int dx, int dy, float dt)
 	v_prev[x][y] = (float)dy / dt * speed;
 	u_prev[x][y] = (float)dx / dt * speed;
 
-	
+
 }
 
-
-FluidCube::~FluidCube()
-{
-}
 void Gauss(vector<vector<float>>& x, const vector<vector<float>>& x0, float koef)
 {
 	for (int i = 1; i < x.size() - 1; i++) {
@@ -145,6 +147,7 @@ void FluidCube::advection(vector<vector<float>>& d, vector<vector<float>>& d0, v
 
 void FluidCube::update(float dt)
 {
+	
 	vel_step(dt);
 	dens_step(dt);
 	dens_prev = vector(height, vector<float>(width));

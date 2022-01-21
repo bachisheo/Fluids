@@ -13,15 +13,11 @@ public:
 	void vel_step(float dt);
 	void reset() ;
 	void render(int pixelOnFluidParticle, sf::Image& image) ;
-	~FluidCube() ;
-	void diffuseVelocity() ;
-	void diffuseDensity() ;
 	void diffuse(vector<vector<float>>& x, vector<vector<float>> const& x0, float diff, int b, float dt);
 	void advection(vector<vector<float>>& d, vector<vector<float>>& d0, vector<vector<float>>& _u, vector<vector<float>>& _v, float dt, int b) ;
 	void advection(vector<vector<float>>& d, vector<vector<float>>& d0, float dt, int b) ;
 	float speed = 50;
 
-	void projectVelocity() ;
 	void projectVelocity(vector<vector<float>>& div, vector<vector<float>>& p);
 	virtual void setBoundary(vector<vector<float>> & x, int b) ;
 private:

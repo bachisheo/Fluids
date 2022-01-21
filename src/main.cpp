@@ -41,9 +41,9 @@ int main()
 	int xSize, ySize;
 	xSize = ySize = 300;
 	int elementSize = 3;
-	float diff = 0.07;
+	float diff = 0.05;
 	float visc = 0.4975;
-	float dens_value = 300;
+	float dens_value = 20;
 	//simulation parameters
 	int numIterations = 5;
 	float eps = 1;
@@ -104,9 +104,11 @@ int main()
 		}
 		if (is_pressed)
 		{
+
 			fluid->addDensity(lastMouseX / elementSize, lastMouseY / elementSize, dens_value);
 			drawLine({mouseX, mouseY}, { mouseX, mouseY-10 }, [&fluid, elementSize, dt](int x, int y, int dx, int dy) { fluid->addVelocity(x / elementSize, y / elementSize, dx / elementSize, dy / elementSize, dt); });
-
+			drawLine({ lastMouseX, lastMouseY }, { mouseX, mouseY },
+				[&fluid, elementSize, lastMouseX, lastMouseY, dens_value](int x, int y, int dx, int dy) { fluid->addDensity(x / elementSize, y / elementSize, dens_value); });
 		}
 
 		
